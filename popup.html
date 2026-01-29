@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TimeKeep</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>⏱️ TimeKeep</h1>
+      <button id="clearBtn" class="clear-btn" title="Clear all data">🗑️</button>
+    </header>
+    
+    <div class="stats-summary">
+      <div class="stat-item">
+        <span class="stat-label">Total Sites</span>
+        <span class="stat-value" id="totalSites">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Total Time</span>
+        <span class="stat-value" id="totalTime">0m</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="Search websites..." class="search-input">
+      <select id="dateSelect" class="date-select">
+        <option value="today">Today</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="week">Last 7 Days</option>
+        <option value="month">Last 30 Days</option>
+        <option value="all">All Time</option>
+      </select>
+    </div>
+
+    <div id="timeList" class="time-list">
+      <div class="empty-state">
+        <p>No data yet. Start browsing!</p>
+      </div>
+    </div>
+
+    <!-- Clear Data Modal -->
+    <div id="clearModal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Clear Data</h3>
+        <p>Select what data to clear:</p>
+        <div class="modal-options">
+          <button class="modal-btn" data-clear="today">Today Only</button>
+          <button class="modal-btn" data-clear="yesterday">Yesterday Only</button>
+          <button class="modal-btn" data-clear="week">Last 7 Days</button>
+          <button class="modal-btn" data-clear="month">Last 30 Days</button>
+          <button class="modal-btn danger" data-clear="all">All Data</button>
+        </div>
+        <button id="cancelClear" class="modal-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,276 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 400px;
+  min-height: 500px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #333;
+}
+
+.container {
+  background: white;
+  border-radius: 8px;
+  margin: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+h1 {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.clear-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 18px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.clear-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.stats-summary {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 12px;
+  color: #6c757d;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 20px;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.controls {
+  padding: 15px 20px;
+  display: flex;
+  gap: 10px;
+  background: white;
+}
+
+.search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.search-input:focus {
+  border-color: #667eea;
+}
+
+.date-select {
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  background: white;
+  min-width: 120px;
+}
+
+.time-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.time-item {
+  padding: 15px 20px;
+  border-bottom: 1px solid #f1f3f5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.time-item:hover {
+  background: #f8f9fa;
+}
+
+.domain-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.domain-name {
+  font-weight: 500;
+  color: #495057;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.time-spent {
+  font-size: 14px;
+  color: #667eea;
+  font-weight: 600;
+}
+
+.time-bar-container {
+  width: 60px;
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-left: 15px;
+}
+
+.time-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #adb5bd;
+}
+
+.empty-state p {
+  font-size: 16px;
+}
+
+/* Scrollbar styling */
+.time-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.time-list::-webkit-scrollbar-track {
+  background: #f1f3f5;
+}
+
+.time-list::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 3px;
+}
+
+.time-list::-webkit-scrollbar-thumb:hover {
+  background: #764ba2;
+}
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 300px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content h3 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.modal-content p {
+  margin: 0 0 16px 0;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.modal-btn {
+  padding: 10px 16px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-btn:hover {
+  background: #f8f9fa;
+  border-color: #667eea;
+}
+
+.modal-btn.danger {
+  background: #dc3545;
+  color: white;
+  border-color: #dc3545;
+}
+
+.modal-btn.danger:hover {
+  background: #c82333;
+}
+
+.modal-btn.cancel {
+  background: #6c757d;
+  color: white;
+  border-color: #6c757d;
+  width: 100%;
+}
+
+.modal-btn.cancel:hover {
+  background: #5a6268;
+}
