@@ -6,7 +6,26 @@ let startTime = null;
 // Initialize storage
 chrome.runtime.onInstalled.addListener(() => {
   console.log('TimeKeep extension installed');
+  initializeTracking();
 });
+
+// Initialize when browser starts
+chrome.runtime.onStartup.addListener(() => {
+  console.log('Browser started - initializing TimeKeep');
+  initializeTracking();
+});
+
+// Initialize tracking on current tab
+async function initializeTracking() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab && tab.url) {
+      startTracking(tab.id, tab.url);
+    }
+  } catch (e) {
+    console.log('Error initializing tracking:', e);
+  }
+}
 
 // Get domain from URL
 function getDomain(url) {
@@ -90,18 +109,31 @@ function stopTracking() {
   }
 }
 
-// Listen for tab activation
-chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  const tab = await chrome.tabs.get(activeInfo.tabId);
-  stopTracking();
-  startTracking(activeInfo.tabId, tab.url);
-});
-
-// Listen for tab updates (URL changes)
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.url && tabId === currentTabId) {
-    stopTracking();
-    startTracking(tabId, changeInfo.url);
+// Listen for tab updates (URL changes and page loads)
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  // Check if this is the active tab
+  try {
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    // Only track if this is the active tab and it has a URL now
+    if (activeTab && activeTab.id === tabId) {
+      // Handle URL changes or when page finishes loading
+      if (changeInfo.url || changeInfo.status === 'complete') {
+        const url = changeInfo.url || tab.url;
+        if (url && url !== 'about:blank') {
+          // If domain changed or we weren't tracking, start tracking
+          const newDomain = getDomain(url);
+          if (newDomain && newDomain !== currentDomain) {
+            stopTracking();
+            startTracking(tabId, url);
+          } else if (!currentDomain && newDomain) {
+            startTracking(tabId, url);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.log('Error on tab update:', e);
   }
 });
 
@@ -111,11 +143,46 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
     // Browser lost focus
     stopTracking();
   } else {
-    // Browser gained focus
-    const [tab] = await chrome.tabs.query({ active: true, windowId });
-    if (tab) {
-      startTracking(tab.id, tab.url);
+    // Browser gained focus - reinitialize tracking
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, windowId });
+      if (tab && tab.url) {
+        stopTracking();
+        startTracking(tab.id, tab.url);
+      }
+    } catch (e) {
+      console.log('Error on focus change:', e);
     }
+  }
+});
+
+// Listen for tab activation - also handles when service worker wakes up
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    const tab = await chrome.tabs.get(activeInfo.tabId);
+    stopTracking();
+    if (tab && tab.url && tab.url !== 'about:blank') {
+      startTracking(activeInfo.tabId, tab.url);
+    }
+    // If URL is not ready yet, onUpdated will handle it when it loads
+  } catch (e) {
+    console.log('Error on tab activation:', e);
+  }
+});
+
+// Listen for new windows being created
+chrome.windows.onCreated.addListener(async (window) => {
+  try {
+    // Small delay to let the tab load
+    setTimeout(async () => {
+      const [tab] = await chrome.tabs.query({ active: true, windowId: window.id });
+      if (tab && tab.url && tab.url !== 'about:blank') {
+        stopTracking();
+        startTracking(tab.id, tab.url);
+      }
+    }, 500);
+  } catch (e) {
+    console.log('Error on window created:', e);
   }
 });
 
@@ -127,9 +194,5 @@ setInterval(() => {
   }
 }, 5000);
 
-// Initialize with current active tab
-chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-  if (tab) {
-    startTracking(tab.id, tab.url);
-  }
-});
+// Initialize immediately when service worker starts/wakes up
+initializeTracking();
