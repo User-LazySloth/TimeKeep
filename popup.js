@@ -91,6 +91,90 @@ function isExcludedDomain(domain) {
   return excludedDomains.includes(domain.toLowerCase());
 }
 
+// Get data grouped by date for multi-day views
+function getGroupedDataByDate(timeData, dateFilter, searchTerm) {
+  let datesToInclude = [];
+
+  if (dateFilter === 'week') {
+    for (let i = 0; i < 7; i++) {
+      datesToInclude.push(getDateDaysAgo(i));
+    }
+  } else if (dateFilter === 'month') {
+    for (let i = 0; i < 30; i++) {
+      datesToInclude.push(getDateDaysAgo(i));
+    }
+  } else if (dateFilter === 'all') {
+    datesToInclude = getAvailableDates(timeData);
+  }
+
+  const groupedData = [];
+
+  datesToInclude.forEach(date => {
+    if (timeData[date]) {
+      let entries = Object.entries(timeData[date]).filter(([domain]) => 
+        !isExcludedDomain(domain) && domain.toLowerCase().includes(searchTerm)
+      );
+
+      if (entries.length > 0) {
+        // Sort by time descending
+        entries.sort((a, b) => b[1] - a[1]);
+        const dayTotal = entries.reduce((sum, [, time]) => sum + time, 0);
+        groupedData.push({
+          date,
+          entries,
+          dayTotal
+        });
+      }
+    }
+  });
+
+  return groupedData;
+}
+
+// Render grouped data by date
+function renderGroupedByDate(groupedData) {
+  if (groupedData.length === 0) {
+    return '<div class="empty-state"><p>No data found</p></div>';
+  }
+
+  let html = '';
+
+  groupedData.forEach(({ date, entries, dayTotal }) => {
+    const maxTime = Math.max(...entries.map(([, time]) => time));
+    
+    html += `
+      <div class="date-group">
+        <div class="date-header">
+          <span class="date-label">${formatDateLabel(date)}</span>
+          <span class="date-total">${formatTime(dayTotal)}</span>
+        </div>
+        <div class="date-entries">
+    `;
+
+    entries.forEach(([domain, time]) => {
+      const percentage = maxTime > 0 ? (time / maxTime) * 100 : 0;
+      html += `
+        <div class="time-item">
+          <div class="domain-info">
+            <div class="domain-name" title="${domain}">${domain}</div>
+            <div class="time-spent">${formatTime(time)}</div>
+          </div>
+          <div class="time-bar-container">
+            <div class="time-bar" style="width: ${percentage}%"></div>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+  });
+
+  return html;
+}
+
 // Load and display time data
 async function loadTimeData() {
   const result = await chrome.storage.local.get(['timeData']);
@@ -102,47 +186,65 @@ async function loadTimeData() {
   // Populate date dropdown
   populateDateSelect(timeData);
 
-  // Aggregate data based on date filter
-  const aggregatedData = aggregateData(timeData, dateFilter);
-
-  // Convert to array, filter out excluded domains and apply search
-  let entries = Object.entries(aggregatedData).filter(([domain]) => 
-    !isExcludedDomain(domain) && domain.toLowerCase().includes(searchTerm)
-  );
-
-  // Sort by time (descending)
-  entries.sort((a, b) => b[1] - a[1]);
-
-  // Calculate total time and max time for scaling
-  const totalTime = entries.reduce((sum, [, time]) => sum + time, 0);
-  const maxTime = entries.length > 0 ? Math.max(...entries.map(([, time]) => time)) : 0;
-
-  // Update summary stats
-  document.getElementById('totalSites').textContent = entries.length;
-  document.getElementById('totalTime').textContent = formatTime(totalTime);
-
-  // Display list
   const timeList = document.getElementById('timeList');
-  
-  if (entries.length === 0) {
-    timeList.innerHTML = '<div class="empty-state"><p>No data found</p></div>';
-    return;
-  }
+  const isMultiDayView = ['week', 'month', 'all'].includes(dateFilter);
 
-  timeList.innerHTML = entries.map(([domain, time]) => {
-    const percentage = maxTime > 0 ? (time / maxTime) * 100 : 0;
-    return `
-      <div class="time-item">
-        <div class="domain-info">
-          <div class="domain-name" title="${domain}">${domain}</div>
-          <div class="time-spent">${formatTime(time)}</div>
+  if (isMultiDayView) {
+    // Grouped view by date
+    const groupedData = getGroupedDataByDate(timeData, dateFilter, searchTerm);
+    
+    // Calculate totals across all dates
+    let totalSites = new Set();
+    let totalTime = 0;
+    groupedData.forEach(({ entries, dayTotal }) => {
+      entries.forEach(([domain]) => totalSites.add(domain));
+      totalTime += dayTotal;
+    });
+
+    document.getElementById('totalSites').textContent = totalSites.size;
+    document.getElementById('totalTime').textContent = formatTime(totalTime);
+
+    timeList.innerHTML = renderGroupedByDate(groupedData);
+  } else {
+    // Single day view (aggregated)
+    const aggregatedData = aggregateData(timeData, dateFilter);
+
+    // Convert to array, filter out excluded domains and apply search
+    let entries = Object.entries(aggregatedData).filter(([domain]) => 
+      !isExcludedDomain(domain) && domain.toLowerCase().includes(searchTerm)
+    );
+
+    // Sort by time (descending)
+    entries.sort((a, b) => b[1] - a[1]);
+
+    // Calculate total time and max time for scaling
+    const totalTime = entries.reduce((sum, [, time]) => sum + time, 0);
+    const maxTime = entries.length > 0 ? Math.max(...entries.map(([, time]) => time)) : 0;
+
+    // Update summary stats
+    document.getElementById('totalSites').textContent = entries.length;
+    document.getElementById('totalTime').textContent = formatTime(totalTime);
+
+    if (entries.length === 0) {
+      timeList.innerHTML = '<div class="empty-state"><p>No data found</p></div>';
+      return;
+    }
+
+    timeList.innerHTML = entries.map(([domain, time]) => {
+      const percentage = maxTime > 0 ? (time / maxTime) * 100 : 0;
+      return `
+        <div class="time-item">
+          <div class="domain-info">
+            <div class="domain-name" title="${domain}">${domain}</div>
+            <div class="time-spent">${formatTime(time)}</div>
+          </div>
+          <div class="time-bar-container">
+            <div class="time-bar" style="width: ${percentage}%"></div>
+          </div>
         </div>
-        <div class="time-bar-container">
-          <div class="time-bar" style="width: ${percentage}%"></div>
-        </div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+  }
 }
 
 // Show clear modal
