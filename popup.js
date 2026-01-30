@@ -257,6 +257,88 @@ function hideClearModal() {
   document.getElementById('clearModal').classList.add('hidden');
 }
 
+// Show download modal
+function showDownloadModal() {
+  document.getElementById('downloadModal').classList.remove('hidden');
+}
+
+// Hide download modal
+function hideDownloadModal() {
+  document.getElementById('downloadModal').classList.add('hidden');
+}
+
+// Get data for export based on date range
+async function getExportData(dateRange) {
+  const result = await chrome.storage.local.get(['timeData']);
+  const timeData = result.timeData || {};
+  
+  let datesToInclude = [];
+  
+  if (dateRange === 'today') {
+    datesToInclude = [getTodayDate()];
+  } else if (dateRange === 'yesterday') {
+    datesToInclude = [getDateDaysAgo(1)];
+  } else if (dateRange === 'week') {
+    for (let i = 0; i < 7; i++) {
+      datesToInclude.push(getDateDaysAgo(i));
+    }
+  } else if (dateRange === 'month') {
+    for (let i = 0; i < 30; i++) {
+      datesToInclude.push(getDateDaysAgo(i));
+    }
+  } else if (dateRange === 'all') {
+    datesToInclude = getAvailableDates(timeData);
+  }
+
+  // Build export object with only selected dates
+  const exportData = {
+    exportedAt: new Date().toISOString(),
+    dateRange: dateRange,
+    data: {}
+  };
+
+  datesToInclude.forEach(date => {
+    if (timeData[date]) {
+      // Filter out excluded domains and convert ms to readable format
+      const filteredData = {};
+      Object.entries(timeData[date]).forEach(([domain, ms]) => {
+        if (!isExcludedDomain(domain)) {
+          filteredData[domain] = {
+            milliseconds: ms,
+            readable: formatTime(ms)
+          };
+        }
+      });
+      if (Object.keys(filteredData).length > 0) {
+        exportData.data[date] = filteredData;
+      }
+    }
+  });
+
+  return exportData;
+}
+
+// Download data as JSON file
+async function downloadData(dateRange) {
+  const exportData = await getExportData(dateRange);
+  
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  
+  const dateStr = getTodayDate();
+  const filename = `timekeep-${dateRange}-${dateStr}.json`;
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  hideDownloadModal();
+}
+
 // Clear data based on selected option
 async function clearData(clearType) {
   const result = await chrome.storage.local.get(['timeData']);
@@ -299,6 +381,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Set up event listeners
   document.getElementById('clearBtn').addEventListener('click', showClearModal);
   document.getElementById('cancelClear').addEventListener('click', hideClearModal);
+  document.getElementById('downloadBtn').addEventListener('click', showDownloadModal);
+  document.getElementById('cancelDownload').addEventListener('click', hideDownloadModal);
   document.getElementById('searchInput').addEventListener('input', loadTimeData);
   document.getElementById('dateSelect').addEventListener('change', loadTimeData);
 
@@ -316,10 +400,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Close modal when clicking outside
+  // Set up download option buttons
+  document.querySelectorAll('.modal-btn[data-download]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const dateRange = btn.getAttribute('data-download');
+      downloadData(dateRange);
+    });
+  });
+
+  // Close modals when clicking outside
   document.getElementById('clearModal').addEventListener('click', (e) => {
     if (e.target.id === 'clearModal') {
       hideClearModal();
+    }
+  });
+
+  document.getElementById('downloadModal').addEventListener('click', (e) => {
+    if (e.target.id === 'downloadModal') {
+      hideDownloadModal();
     }
   });
 
