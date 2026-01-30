@@ -22,6 +22,7 @@
 
 - **Automatic Time Tracking** — Tracks active browsing time on each website automatically
 - **Date-Based Analytics** — View statistics by Today, Yesterday, Last 7 Days, Last 30 Days, or All Time
+- **Export to JSON** — Download your browsing data for external analysis
 - **Search** — Quickly find specific websites in your history
 - **Visual Statistics** — Progress bars show relative time spent on each site
 - **Persistent Storage** — Data is stored locally and persists across browser restarts
@@ -103,6 +104,33 @@ Type in the search box to filter websites by name.
    - **Last 30 Days** — Clear the past month
    - **All Data** — Clear everything (with confirmation)
 
+### Exporting Data
+
+1. Click the 📥 button
+2. Choose the time range to export:
+   - **Today** — Export today's data
+   - **Yesterday** — Export yesterday's data
+   - **Last 7 Days** — Export the past week
+   - **Last 30 Days** — Export the past month
+   - **All Time** — Export all data
+3. A JSON file will be downloaded with your browsing data
+
+**Exported JSON format:**
+```json
+{
+  "exportedAt": "2026-01-30T10:30:00.000Z",
+  "dateRange": "week",
+  "data": {
+    "2026-01-30": {
+      "github.com": {
+        "milliseconds": 1234567,
+        "readable": "20m 34s"
+      }
+    }
+  }
+}
+```
+
 ## Privacy
 
 TimeKeep is designed with privacy in mind:
@@ -141,10 +169,14 @@ TimeKeep/
 ### How It Works
 
 1. **Background Service Worker** (`background.js`)
-   - Listens for tab changes and focus events
+   - Listens for tab changes, window focus, and new window events
    - Tracks time spent on active tab
    - Saves data every 5 seconds to local storage
    - Stops tracking when browser loses focus
+   - Handles edge cases:
+     - Detects when a page finishes loading (not just URL changes)
+     - Properly tracks new tabs/windows after they load
+     - Ignores temporary `about:blank` states during navigation
 
 2. **Data Structure**
    ```javascript
@@ -177,7 +209,7 @@ Contributions are welcome! Feel free to:
 
 ## Roadmap
 
-- [ ] Export data to CSV/JSON
+- [x] Export data to JSON
 - [ ] Daily/weekly email reports
 - [ ] Set time limits with notifications
 - [ ] Website categorization (Social, Work, Entertainment)

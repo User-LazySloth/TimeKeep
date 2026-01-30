@@ -10,7 +10,10 @@
   <div class="container">
     <header>
       <h1>⏱️ TimeKeep</h1>
-      <button id="clearBtn" class="clear-btn" title="Clear all data">🗑️</button>
+      <div class="header-buttons">
+        <button id="downloadBtn" class="header-btn" title="Download data">📥</button>
+        <button id="clearBtn" class="header-btn" title="Clear data">🗑️</button>
+      </div>
     </header>
     
     <div class="stats-summary">
@@ -54,6 +57,22 @@
           <button class="modal-btn danger" data-clear="all">All Data</button>
         </div>
         <button id="cancelClear" class="modal-btn cancel">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Download Data Modal -->
+    <div id="downloadModal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Download Data</h3>
+        <p>Select time range to export:</p>
+        <div class="modal-options">
+          <button class="modal-btn" data-download="today">Today</button>
+          <button class="modal-btn" data-download="yesterday">Yesterday</button>
+          <button class="modal-btn" data-download="week">Last 7 Days</button>
+          <button class="modal-btn" data-download="month">Last 30 Days</button>
+          <button class="modal-btn" data-download="all">All Time</button>
+        </div>
+        <button id="cancelDownload" class="modal-btn cancel">Cancel</button>
       </div>
     </div>
   </div>
